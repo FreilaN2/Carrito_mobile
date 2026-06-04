@@ -26,6 +26,8 @@ interface Category {
 }
 
 const CATEGORY_ICONS: Record<string, string> = {
+  'Todos': '✨',
+  'Farmacia': '💊',
   'Belleza': '💄',
   'Cuidado Personal': '🧴',
   'Bebés': '🍼',
@@ -149,7 +151,7 @@ export default function HomeScreen() {
       <FlatList
         horizontal
         data={[{ id: 'all', name: 'Todos' }, ...categories]}
-        keyExtractor={(i) => i.id}
+        keyExtractor={(i) => i.id.toString()}
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.categoriesRow}
         renderItem={({ item }) => {
@@ -160,7 +162,7 @@ export default function HomeScreen() {
               onPress={() => setSelectedCategory(item.id === 'all' ? null : item.name)}
             >
               <View style={[styles.categoryCircle, active && styles.categoryCircleActive]}>
-                <Text style={styles.categoryIcon}>{CATEGORY_ICONS[item.name] ?? (item.id === 'all' ? '✨' : '🏷️')}</Text>
+                <Text style={styles.categoryIcon}>{CATEGORY_ICONS[item.name] ?? '🏷️'}</Text>
               </View>
               <Text style={[styles.categoryText, active && styles.categoryTextActive]} numberOfLines={2}>
                 {item.name}
@@ -173,7 +175,7 @@ export default function HomeScreen() {
       {/* Productos */}
       <FlatList
         data={filtered}
-        keyExtractor={(i) => i.id}
+        keyExtractor={(i) => i.id.toString()}
         numColumns={2}
         contentContainerStyle={styles.productGrid}
         columnWrapperStyle={styles.productRow}

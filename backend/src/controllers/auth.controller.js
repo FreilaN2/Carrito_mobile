@@ -33,7 +33,7 @@ exports.register = async (req, res) => {
       token: generateToken(user.id, user.role)
     });
   } catch (error) {
-    res.status(500).json({ message: 'Error en el servidor', error: error.message });
+    res.status(500).json({ message: 'Error en el servidor: ' + error.message, error: error.message });
   }
 };
 
