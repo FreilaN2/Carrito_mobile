@@ -39,3 +39,9 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# Archivos solicitados a ignorar
+.env
+services/api.ts
+package-lock.json
+backend/package-lock.json

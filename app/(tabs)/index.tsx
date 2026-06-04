@@ -17,7 +17,7 @@ interface Product {
   price: number;
   image_url: string | null;
   stock: number;
-  Category?: { name: string };
+  category?: { name: string };
 }
 
 interface Category {
@@ -63,7 +63,7 @@ export default function HomeScreen() {
 
   const filtered = products.filter((p) => {
     const matchSearch = p.name.toLowerCase().includes(search.toLowerCase());
-    const matchCat = selectedCategory ? p.Category?.name === selectedCategory : true;
+    const matchCat = selectedCategory ? p.category?.name === selectedCategory : true;
     return matchSearch && matchCat;
   });
 
@@ -84,7 +84,7 @@ export default function HomeScreen() {
           )}
         </View>
         <View style={styles.productInfo}>
-          <Text style={styles.productCategory}>{item.Category?.name || 'Sin categoría'}</Text>
+          <Text style={styles.productCategory}>{item.category?.name || 'Sin categoría'}</Text>
           <Text style={styles.productName} numberOfLines={2}>{item.name}</Text>
           <View style={styles.productFooter}>
             <Text style={styles.productPrice}>${Number(item.price).toFixed(2)}</Text>
@@ -221,8 +221,8 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.sm,
   },
   categoryCircleActive: { borderColor: Colors.primary, borderWidth: 2 },
-  categoryIcon: { fontSize: 28 },
-  categoryText: { fontSize: FontSize.xs, color: Colors.textSecondary, textAlign: 'center', fontWeight: FontWeight.medium, lineHeight: 14 },
+  categoryIcon: { fontSize: 28, lineHeight: 32, textAlign: 'center' },
+  categoryText: { fontSize: FontSize.xs, color: Colors.textSecondary, textAlign: 'center', fontWeight: FontWeight.medium, lineHeight: 14, marginTop: 4 },
   categoryTextActive: { color: Colors.primary, fontWeight: FontWeight.bold },
   productGrid: { paddingHorizontal: Spacing.lg, paddingBottom: Spacing.xl },
   productRow: { gap: Spacing.sm, marginBottom: Spacing.sm },
