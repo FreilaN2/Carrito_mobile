@@ -14,16 +14,21 @@ export default function RegisterScreen() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const { register, isLoading } = useAuthStore();
 
   const handleRegister = async () => {
-    if (!name.trim() || !email.trim() || !password.trim()) {
+    if (!name.trim() || !email.trim() || !password.trim() || !confirmPassword.trim()) {
       Toast.show({ type: 'error', text1: 'Campos requeridos', text2: 'Completa todos los campos' });
       return;
     }
     if (password.length < 6) {
       Toast.show({ type: 'error', text1: 'Contraseña muy corta', text2: 'Mínimo 6 caracteres' });
+      return;
+    }
+    if (password !== confirmPassword) {
+      Toast.show({ type: 'error', text1: 'Error', text2: 'Las contraseñas no coinciden' });
       return;
     }
     const result = await register({ name: name.trim(), email: email.trim(), password });
@@ -100,6 +105,22 @@ export default function RegisterScreen() {
                 <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeBtn}>
                   {showPassword ? <EyeOff size={18} color={Colors.textMuted} /> : <Eye size={18} color={Colors.textMuted} />}
                 </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Confirmar Contraseña */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Confirmar Contraseña</Text>
+              <View style={styles.inputWrapper}>
+                <Lock size={18} color={Colors.textMuted} style={styles.inputIcon} />
+                <TextInput
+                  style={[styles.input, { flex: 1 }]}
+                  placeholder="Repite la contraseña"
+                  placeholderTextColor={Colors.textMuted}
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                  secureTextEntry={!showPassword}
+                />
               </View>
             </View>
 
