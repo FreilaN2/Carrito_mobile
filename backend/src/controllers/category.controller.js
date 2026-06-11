@@ -35,17 +35,11 @@ exports.getCategoryById = async (req, res) => {
 // @access  Private/Admin
 exports.createCategory = async (req, res) => {
   try {
-    const { name, description } = req.body;
-    let image_url = null;
-
-    if (req.file) {
-      image_url = `/uploads/${req.file.filename}`;
-    }
+    const { name } = req.body;
 
     const category = await Category.create({
       name,
-      description,
-      image_url
+      status: 'A'
     });
 
     res.status(201).json(category);
@@ -59,7 +53,7 @@ exports.createCategory = async (req, res) => {
 // @access  Private/Admin
 exports.updateCategory = async (req, res) => {
   try {
-    const { name, description } = req.body;
+    const { name, status } = req.body;
     const category = await Category.findByPk(req.params.id);
 
     if (!category) {
@@ -67,11 +61,7 @@ exports.updateCategory = async (req, res) => {
     }
 
     category.name = name || category.name;
-    category.description = description !== undefined ? description : category.description;
-
-    if (req.file) {
-      category.image_url = `/uploads/${req.file.filename}`;
-    }
+    category.status = status !== undefined ? status : category.status;
 
     await category.save();
     res.json(category);

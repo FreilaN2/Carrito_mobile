@@ -13,4 +13,7 @@ router.route('/:id')
   .put(protect, admin, upload.single('image'), productController.updateProduct)
   .delete(protect, admin, productController.deleteProduct);
 
+router.route('/:id/image')
+  .get(productController.getProductImage);
+
 module.exports = router;

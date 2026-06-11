@@ -2,36 +2,15 @@ const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 
 const Order = sequelize.define('Order', {
-  id: {
-    type: DataTypes.INTEGER,
-    autoIncrement: true,
-    primaryKey: true
-  },
-  user_id: {
-    type: DataTypes.INTEGER,
-    allowNull: false
-  },
-  total_amount: {
-    type: DataTypes.DECIMAL(10, 2),
-    allowNull: false
-  },
-  status: {
-    type: DataTypes.ENUM('pending', 'paid', 'shipped', 'delivered', 'cancelled'),
-    defaultValue: 'pending'
-  },
-  payment_method: {
-    type: DataTypes.STRING(50),
-    allowNull: true
-  },
-  shipping_address: {
-    type: DataTypes.TEXT,
-    allowNull: true
-  }
-}, {
-  tableName: 'orders',
-  timestamps: true,
-  createdAt: 'created_at',
-  updatedAt: 'updated_at'
-});
+  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+  shopping_car_id: { type: DataTypes.INTEGER, unique: true },
+  delivery_address_id: { type: DataTypes.INTEGER },
+  customer_id: { type: DataTypes.INTEGER },
+  total_base: { type: DataTypes.REAL },
+  iva: { type: DataTypes.DECIMAL },
+  total_amount: { type: DataTypes.REAL },
+  delivery: { type: DataTypes.BOOLEAN },
+  amount_delivery: { type: DataTypes.DECIMAL }
+}, { tableName: 'orders', timestamps: false });
 
 module.exports = Order;
