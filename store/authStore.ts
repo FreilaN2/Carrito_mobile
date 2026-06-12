@@ -19,7 +19,8 @@ interface AuthState {
   isLoading: boolean;
   error: string | null;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  register: (userData: { name: string; email: string; password: string }) => Promise<{ success: boolean; error?: string }>;
+  verifyCode: (email: string, code: string) => Promise<{ success: boolean; error?: string }>;
+  register: (userData: { name: string; email: string; password: string }) => Promise<{ success: boolean; requireVerification?: boolean; email?: string; error?: string }>;
   logout: () => Promise<void>;
   clearError: () => void;
 }
@@ -53,12 +54,33 @@ const useAuthStore = create<AuthState>()(
         set({ isLoading: true, error: null });
         try {
           const response = await api.post('/auth/register', userData);
+          // Ahora el backend responde con requireVerification y no da el JWT todavía
+          if (response.data.requireVerification) {
+            set({ isLoading: false });
+            return { success: true, requireVerification: true, email: response.data.email };
+          }
+          // Fallback por si acaso
           const { token, ...newUser } = response.data;
           await SecureStore.setItemAsync('jwt-token', token);
           set({ user: newUser, token, isAuthenticated: true, isLoading: false });
           return { success: true };
         } catch (error: any) {
           const msg = error.response?.data?.message || 'Error al registrarse';
+          set({ error: msg, isLoading: false });
+          return { success: false, error: msg };
+        }
+      },
+
+      verifyCode: async (email, code) => {
+        set({ isLoading: true, error: null });
+        try {
+          const response = await api.post('/auth/verify', { email, code });
+          const { token, ...newUser } = response.data;
+          await SecureStore.setItemAsync('jwt-token', token);
+          set({ user: newUser, token, isAuthenticated: true, isLoading: false });
+          return { success: true };
+        } catch (error: any) {
+          const msg = error.response?.data?.message || 'Código incorrecto';
           set({ error: msg, isLoading: false });
           return { success: false, error: msg };
         }

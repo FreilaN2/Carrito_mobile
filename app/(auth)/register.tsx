@@ -16,7 +16,12 @@ export default function RegisterScreen() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const { register, isLoading } = useAuthStore();
+  
+  // Estados para la verificación
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [code, setCode] = useState('');
+  
+  const { register, verifyCode, isLoading } = useAuthStore();
 
   const handleRegister = async () => {
     if (!name.trim() || !email.trim() || !password.trim() || !confirmPassword.trim()) {
@@ -33,12 +38,71 @@ export default function RegisterScreen() {
     }
     const result = await register({ name: name.trim(), email: email.trim(), password });
     if (result.success) {
-      Toast.show({ type: 'success', text1: '¡Bienvenido!', text2: 'Tu cuenta fue creada exitosamente' });
-      router.replace('/(tabs)');
+      if (result.requireVerification) {
+        setIsVerifying(true);
+        Toast.show({ type: 'success', text1: '¡Revisa tu correo!', text2: 'Te hemos enviado un código de 6 dígitos.' });
+      } else {
+        Toast.show({ type: 'success', text1: '¡Bienvenido!', text2: 'Tu cuenta fue creada exitosamente' });
+        router.replace('/(tabs)');
+      }
     } else {
       Toast.show({ type: 'error', text1: 'Error al registrarse', text2: result.error });
     }
   };
+
+  const handleVerify = async () => {
+    if (code.length !== 6) {
+      Toast.show({ type: 'error', text1: 'Código inválido', text2: 'El código debe tener 6 dígitos' });
+      return;
+    }
+    const result = await verifyCode(email.trim(), code);
+    if (result.success) {
+      Toast.show({ type: 'success', text1: '¡Cuenta verificada!', text2: 'Bienvenido a la aplicación' });
+      router.replace('/(tabs)');
+    } else {
+      Toast.show({ type: 'error', text1: 'Error', text2: result.error });
+    }
+  };
+
+  if (isVerifying) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={{ flex: 1, padding: Spacing.lg, justifyContent: 'center' }}>
+          <Text style={styles.title}>Verifica tu correo</Text>
+          <Text style={styles.subtitle}>Hemos enviado un código a {email}</Text>
+
+          <View style={styles.form}>
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Código de 6 dígitos</Text>
+              <View style={styles.inputWrapper}>
+                <TextInput
+                  style={[styles.input, { textAlign: 'center', letterSpacing: 5, fontSize: 24 }]}
+                  placeholder="000000"
+                  placeholderTextColor={Colors.textMuted}
+                  value={code}
+                  onChangeText={setCode}
+                  keyboardType="number-pad"
+                  maxLength={6}
+                />
+              </View>
+            </View>
+
+            <TouchableOpacity style={styles.registerBtn} onPress={handleVerify} disabled={isLoading}>
+              {isLoading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.registerBtnText}>Verificar y Entrar</Text>
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity style={{ marginTop: 20 }} onPress={() => setIsVerifying(false)}>
+               <Text style={[styles.loginText, { textAlign: 'center' }]}>Cambiar correo o intentar de nuevo</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>

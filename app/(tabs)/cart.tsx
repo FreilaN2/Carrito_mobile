@@ -6,6 +6,7 @@ import Toast from 'react-native-toast-message';
 import useCartStore from '../../store/cartStore';
 import useAuthStore from '../../store/authStore';
 import { Colors, Spacing, Radius, FontSize, FontWeight } from '../../constants/theme';
+import api from '../../services/api';
 
 export default function CartScreen() {
   const { items, removeItem, updateQuantity, clearCart, totalItems, totalPrice } = useCartStore();
@@ -54,7 +55,11 @@ export default function CartScreen() {
           <View style={styles.cartItem}>
             <View style={styles.itemImageWrapper}>
               {item.image_url ? (
-                <Image source={{ uri: item.image_url }} style={styles.itemImage} resizeMode="cover" />
+                <Image 
+                  source={{ uri: item.image_url.startsWith('http') ? item.image_url : `${api.defaults.baseURL?.replace('/api', '')}${item.image_url}` }} 
+                  style={styles.itemImage} 
+                  resizeMode="cover" 
+                />
               ) : (
                 <View style={styles.itemImagePlaceholder}>
                   <ShoppingBag size={24} color={Colors.textMuted} />
