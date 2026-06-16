@@ -1,5 +1,6 @@
-const { Customer } = require('../models');
+const { Customer, sequelize } = require('../models');
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 const nodemailer = require('nodemailer');
 
 // Caché temporal para guardar los códigos en memoria (email -> { code, expiresAt })
@@ -26,14 +27,19 @@ exports.register = async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
-    // 1. Verificar si el cliente ya existe
-    const customerExists = await Customer.findOne({ where: { email } });
+    // 1. Verificar si el cliente ya existe usando el SP
+    const [existingCustomers] = await sequelize.query(
+      'SELECT * FROM sp_get_customer_by_email(:email)',
+      { replacements: { email } }
+    );
+    const customerExists = existingCustomers[0];
+
     if (customerExists) {
       if (customerExists.status === 'A') {
         return res.status(400).json({ message: 'El correo electrónico ya está registrado' });
       }
-      // Si el status es 'P', permitiremos reenviar o actualizar la contraseña
-      await customerExists.destroy(); // Limpiamos el registro pendiente anterior para crear uno nuevo limpio
+      // Si el status es 'P', lo eliminamos con Sequelize por ahora
+      await Customer.destroy({ where: { id: customerExists.id } });
     }
 
     // 2. Generar código de 6 dígitos
@@ -45,14 +51,23 @@ exports.register = async (req, res) => {
       expiresAt: Date.now() + 15 * 60 * 1000
     });
 
-    // 4. Crear el cliente con status 'P' (Pendiente)
-    const customer = await Customer.create({
-      name,
-      email,
-      password_hash: password, // Se hashea automáticamente
-      status: 'P', 
-      level: 'user'
-    });
+    // 4. Crear el cliente con status 'P' usando el SP
+    // (Como ya no usamos el modelo de Sequelize, tenemos que hashear la contraseña manualmente)
+    const salt = await bcrypt.genSalt(10);
+    const password_hash = await bcrypt.hash(password, salt);
+
+    await sequelize.query(
+      'CALL sp_create_customer(:name, :email, :password_hash, :status, :level)',
+      { 
+        replacements: { 
+          name, 
+          email, 
+          password_hash: Buffer.from(password_hash), 
+          status: 'P', 
+          level: 'user' 
+        } 
+      }
+    );
 
     // 5. Enviar el correo
     try {
@@ -108,14 +123,22 @@ exports.verifyCode = async (req, res) => {
       return res.status(400).json({ message: 'Código incorrecto.' });
     }
 
-    // Código válido, procedemos a activar la cuenta
-    const customer = await Customer.findOne({ where: { email } });
+    // Código válido, procedemos a activar la cuenta usando el SP
+    const [results] = await sequelize.query(
+      'SELECT * FROM sp_get_customer_by_email(:email)',
+      { replacements: { email } }
+    );
+    const customer = results[0];
+
     if (!customer) {
       return res.status(404).json({ message: 'Cliente no encontrado en la base de datos.' });
     }
 
-    customer.status = 'A'; // Activo
-    await customer.save();
+    // Usar el SP para actualizar el estatus
+    await sequelize.query(
+      'CALL sp_update_customer_status(:id, :status)',
+      { replacements: { id: customer.id, status: 'A' } }
+    );
 
     // Limpiamos el caché
     global.verificationCodes.delete(email);
@@ -138,9 +161,13 @@ exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    const customer = await Customer.findOne({ where: { email } });
+    const [results] = await sequelize.query(
+      'SELECT * FROM sp_get_customer_for_login(:email)',
+      { replacements: { email } }
+    );
+    const customer = results[0];
 
-    if (customer && (await customer.validPassword(password))) {
+    if (customer && (await bcrypt.compare(password, customer.password_hash.toString()))) {
       if (customer.status === 'P') {
         return res.status(401).json({ message: 'Cuenta pendiente. Revisa tu correo y verifica tu cuenta.' });
       }
@@ -167,9 +194,13 @@ exports.adminLogin = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    const customer = await Customer.findOne({ where: { email } });
+    const [results] = await sequelize.query(
+      'SELECT * FROM sp_get_customer_for_login(:email)',
+      { replacements: { email } }
+    );
+    const customer = results[0];
 
-    if (customer && (await customer.validPassword(password))) {
+    if (customer && (await bcrypt.compare(password, customer.password_hash.toString()))) {
       if (customer.status !== 'A') {
         return res.status(401).json({ message: 'Cuenta desactivada' });
       }
@@ -195,19 +226,20 @@ exports.adminLogin = async (req, res) => {
 
 exports.getMe = async (req, res) => {
   try {
-    const customer = await Customer.findByPk(req.user.id, {
-      attributes: { exclude: ['password_hash'] }
-    });
+    const [results] = await sequelize.query(
+      'SELECT * FROM sp_get_customer_by_id(:id)',
+      { replacements: { id: req.user.id } }
+    );
+    const customer = results[0];
     
     if (!customer) {
       return res.status(404).json({ message: 'Cliente no encontrado' });
     }
 
-    const customerData = customer.toJSON();
     // Mapeamos para que el frontend siga reconociendo 'role'
-    customerData.role = customerData.level;
+    customer.role = customer.level;
 
-    res.json(customerData);
+    res.json(customer);
   } catch (error) {
     res.status(500).json({ message: 'Error en el servidor', error: error.message });
   }
