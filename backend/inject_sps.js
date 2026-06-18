@@ -17,19 +17,25 @@ async function injectSPs() {
     console.log('⏳ Conectando a la base de datos...');
     await client.connect();
     
-    // 2. Leer el archivo unificado de SQL
-    const sqlPath = path.join(__dirname, 'sp_customers.sql');
-    if (!fs.existsSync(sqlPath)) {
-      throw new Error(`No se encontró el archivo: ${sqlPath}`);
+    // 2. Leer los archivos SQL
+    const customersSqlPath = path.join(__dirname, 'sp_customers.sql');
+    const parametersSqlPath = path.join(__dirname, 'sp_parameters.sql');
+    
+    if (!fs.existsSync(customersSqlPath) || !fs.existsSync(parametersSqlPath)) {
+      throw new Error(`No se encontraron los archivos SQL de SPs.`);
     }
     
-    const sql = fs.readFileSync(sqlPath, 'utf8');
+    const customersSql = fs.readFileSync(customersSqlPath, 'utf8');
+    const parametersSql = fs.readFileSync(parametersSqlPath, 'utf8');
 
     // 3. Ejecutar todo el SQL en la base de datos
-    console.log('⏳ Inyectando los 5 Stored Procedures...');
-    await client.query(sql);
+    console.log('⏳ Inyectando los Stored Procedures de Customers...');
+    await client.query(customersSql);
+
+    console.log('⏳ Inyectando los Stored Procedures de Parámetros...');
+    await client.query(parametersSql);
     
-    console.log('✅ ¡Éxito! Todos los Stored Procedures para la tabla customers han sido creados/actualizados.');
+    console.log('✅ ¡Éxito! Todos los Stored Procedures han sido inyectados en la base de datos de tu compañera.');
 
   } catch (error) {
     console.error('❌ Error inyectando los SPs:', error.message);

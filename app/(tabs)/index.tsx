@@ -78,7 +78,11 @@ export default function HomeScreen() {
       >
         <View style={styles.productImageWrapper}>
           {item.image_url ? (
-            <Image source={{ uri: item.image_url }} style={styles.productImage} resizeMode="cover" />
+            <Image 
+              source={{ uri: item.image_url.startsWith('http') ? item.image_url : `${api.defaults.baseURL?.replace('/api', '')}${item.image_url}` }} 
+              style={styles.productImage} 
+              resizeMode="cover" 
+            />
           ) : (
             <View style={styles.productImagePlaceholder}>
               <ShoppingBag size={32} color={Colors.textMuted} />
@@ -226,10 +230,10 @@ const styles = StyleSheet.create({
   categoryIcon: { fontSize: 28, lineHeight: 32, textAlign: 'center' },
   categoryText: { fontSize: FontSize.xs, color: Colors.textSecondary, textAlign: 'center', fontWeight: FontWeight.medium, lineHeight: 14, marginTop: 4 },
   categoryTextActive: { color: Colors.primary, fontWeight: FontWeight.bold },
-  productGrid: { paddingHorizontal: Spacing.lg, paddingBottom: Spacing.xl },
+  productGrid: { paddingHorizontal: Spacing.lg, paddingTop: Spacing.xl, paddingBottom: Spacing.xl },
   productRow: { gap: Spacing.sm, marginBottom: Spacing.sm },
   productCard: {
-    flex: 1, backgroundColor: Colors.surface,
+    flex: 1, maxWidth: '48%', backgroundColor: Colors.surface,
     borderRadius: Radius.lg, overflow: 'hidden',
     borderWidth: 1, borderColor: Colors.border,
   },

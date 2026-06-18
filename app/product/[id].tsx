@@ -55,7 +55,11 @@ export default function ProductDetailScreen() {
         {/* Imagen */}
         <View style={styles.imageContainer}>
           {product.image_url ? (
-            <Image source={{ uri: product.image_url }} style={styles.productImage} resizeMode="contain" />
+            <Image 
+              source={{ uri: product.image_url.startsWith('http') ? product.image_url : `${api.defaults.baseURL?.replace('/api', '')}${product.image_url}` }} 
+              style={styles.productImage} 
+              resizeMode="contain" 
+            />
           ) : (
             <View style={styles.imagePlaceholder}>
               <ShoppingBag size={80} color={Colors.textMuted} strokeWidth={1} />
